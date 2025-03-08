@@ -7,6 +7,7 @@ import (
 
 type ToDoRepository interface {
 	CreateTask(ctx context.Context, params *domain.CreateTaskParams) (*domain.Task, error)
+	GetTask(ctx context.Context, taskID int64) (*domain.Task, error)
 }
 
 type ToDoService interface {
@@ -38,7 +39,13 @@ func (s *toDoService) CreateTask(ctx context.Context, params *domain.CreateTaskP
 }
 
 func (s *toDoService) GetTask(ctx context.Context, taskID int64) (*domain.Task, error) {
-	return &domain.Task{}, nil
+	task, err := s.repo.GetTask(ctx, taskID)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return task, nil
 }
 
 func (s *toDoService) ListTasks(ctx context.Context) ([]domain.Task, error) {

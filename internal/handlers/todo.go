@@ -39,6 +39,7 @@ func (h *ToDoHandler) CreateTask(ctx context.Context, req *pb.CreateTaskRequest)
 	task, err := h.service.CreateTask(ctx, params)
 
 	if err != nil {
+		log.Printf("ошибка при создании task: %v", err)
 		return nil, status.Errorf(codes.Internal, "ошибка при создании task: %v", err)
 	}
 
@@ -55,7 +56,30 @@ func (h *ToDoHandler) CreateTask(ctx context.Context, req *pb.CreateTaskRequest)
 }
 
 func (h *ToDoHandler) GetTask(ctx context.Context, req *pb.GetTaskRequest) (*pb.GetTaskResponse, error) {
-	return nil, nil
+	if req.TaskId == 0 {
+		log.Printf("ошибка: taskID должен быть больше 0")
+		return nil, status.Error(codes.InvalidArgument, "taskID должен быть больше 0")
+	}
+
+	taskID := req.TaskId
+
+	task, err := h.service.GetTask(ctx, taskID)
+
+	if err != nil {
+		log.Printf("ошибка получения task: %v", err)
+		return nil, status.Errorf(codes.Internal, "ошибка получения task: %v", err)
+	}
+
+	return &pb.GetTaskResponse{
+		Task: &pb.Task{
+			TaskId:      task.ID,
+			Title:       task.Title,
+			Description: task.Description,
+			IsCompleted: task.IsCompleted,
+			CreatedAt:   timestamppb.New(task.CreatedAt),
+			UpdatedAt:   timestamppb.New(task.UpdatedAt),
+		},
+	}, nil
 }
 
 func (h *ToDoHandler) ListTasks(ctx context.Context, req *pb.ListTasksRequest) (*pb.ListTasksResponse, error) {
