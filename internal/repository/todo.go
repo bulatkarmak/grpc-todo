@@ -79,3 +79,43 @@ func (r *toDoRepository) ListTasks(ctx context.Context) ([]domain.Task, error) {
 
 	return tasks, nil
 }
+
+func (r *toDoRepository) UpdateTask(ctx context.Context, params *domain.UpdateTaskParams) (*domain.Task, error) {
+	query := "UPDATE tasks SET"
+	args := []interface{}{}
+	i := 1
+
+	if params.Title != nil {
+		query += fmt.Sprintf(" title=$%d,", i)
+		args = append(args, *params.Title)
+		i++
+	}
+
+	if params.Description != nil {
+		query += fmt.Sprintf(" description=$%d,", i)
+		args = append(args, *params.Description)
+		i++
+	}
+
+	if params.IsCompleted != nil {
+		query += fmt.Sprintf(" is_completed=$%d,", i)
+		args = append(args, *params.IsCompleted)
+		i++
+	}
+
+	query += fmt.Sprintf(" updated_at = NOW() WHERE id=$%d RETURNING id, title, description, is_completed, created_at, updated_at", i)
+	args = append(args, params.ID)
+
+	row := r.db.QueryRowContext(ctx, query, args...)
+
+	task := &domain.Task{}
+
+	err := row.Scan(&task.ID, &task.Title, &task.Description, &task.IsCompleted, &task.CreatedAt, &task.UpdatedAt)
+
+	if err != nil {
+		fmt.Printf("%v\n%v", query, args)
+		return nil, fmt.Errorf("ошибка при обновлении task: %w", err)
+	}
+
+	return task, nil
+}

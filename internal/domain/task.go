@@ -17,3 +17,10 @@ type CreateTaskParams struct {
 	Title       string
 	Description string
 }
+
+type UpdateTaskParams struct {
+	ID          int64
+	Title       *string
+	Description *string
+	IsCompleted *bool
+}

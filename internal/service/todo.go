@@ -2,20 +2,28 @@ package service
 
 import (
 	"context"
+	"errors"
 	"github.com/bulatkarmak/grpc-todo/internal/domain"
+)
+
+var (
+	EmptyTitleErr      = errors.New("title не может быть пустым")
+	EmptyDescErr       = errors.New("description не может быть пустым")
+	EmptyTaskUpdateErr = errors.New("нечего обновлять — все поля, кроме id, пустые")
 )
 
 type ToDoRepository interface {
 	CreateTask(ctx context.Context, params *domain.CreateTaskParams) (*domain.Task, error)
 	GetTask(ctx context.Context, taskID int64) (*domain.Task, error)
 	ListTasks(ctx context.Context) ([]domain.Task, error)
+	UpdateTask(ctx context.Context, params *domain.UpdateTaskParams) (*domain.Task, error)
 }
 
 type ToDoService interface {
 	CreateTask(ctx context.Context, params *domain.CreateTaskParams) (*domain.Task, error)
 	GetTask(ctx context.Context, taskID int64) (*domain.Task, error)
 	ListTasks(ctx context.Context) ([]domain.Task, error)
-	UpdateTask(ctx context.Context, task *domain.Task) (*domain.Task, error)
+	UpdateTask(ctx context.Context, params *domain.UpdateTaskParams) (*domain.Task, error)
 	DeleteTask(ctx context.Context, taskID int64) error
 }
 
@@ -30,6 +38,14 @@ func NewToDoService(repo ToDoRepository) ToDoService {
 }
 
 func (s *toDoService) CreateTask(ctx context.Context, params *domain.CreateTaskParams) (*domain.Task, error) {
+	if params.Title == "" {
+		return nil, EmptyTitleErr
+	}
+
+	if params.Description == "" {
+		return nil, EmptyDescErr
+	}
+
 	task, err := s.repo.CreateTask(ctx, params)
 
 	if err != nil {
@@ -58,8 +74,26 @@ func (s *toDoService) ListTasks(ctx context.Context) ([]domain.Task, error) {
 	return tasks, nil
 }
 
-func (s *toDoService) UpdateTask(ctx context.Context, task *domain.Task) (*domain.Task, error) {
-	return &domain.Task{}, nil
+func (s *toDoService) UpdateTask(ctx context.Context, params *domain.UpdateTaskParams) (*domain.Task, error) {
+	if params.Title == nil && params.Description == nil && params.IsCompleted == nil {
+		return s.GetTask(ctx, params.ID)
+	}
+
+	if params.Title != nil && *params.Title == "" {
+		return nil, EmptyTitleErr
+	}
+
+	if params.Description != nil && *params.Description == "" {
+		return nil, EmptyDescErr
+	}
+
+	task, err := s.repo.UpdateTask(ctx, params)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return task, nil
 }
 
 func (s *toDoService) DeleteTask(ctx context.Context, taskID int64) error {
