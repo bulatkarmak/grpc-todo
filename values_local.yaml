@@ -1,0 +1,7 @@
+database:
+  user: "bjustice"
+  dbname: "grpc_todo"
+  sslmode: "disable"
+server:
+  protocol: "tcp"
+  port: ":50051"

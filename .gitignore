@@ -24,8 +24,11 @@ go.work.sum
 # env file
 .env
 
-#DS_Store
+# DS_Store
 *.DS_Store
 
 # Файлы Idea
 *.idea
+
+# Config-файл
+values_local.yaml

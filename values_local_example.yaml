@@ -1,0 +1,7 @@
+database:
+  user: "" # Имя пользователя для подключения к БД
+  dbname: "" # Название БД
+  sslmode: "disable"
+server:
+  protocol: "tcp"
+  port: ":50051"

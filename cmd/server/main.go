@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"fmt"
 	pb "github.com/bulatkarmak/grpc-todo/api/todo-list"
+	"github.com/bulatkarmak/grpc-todo/internal/config"
 	"github.com/bulatkarmak/grpc-todo/internal/handlers"
 	"github.com/bulatkarmak/grpc-todo/internal/repository"
 	"github.com/bulatkarmak/grpc-todo/internal/service"
@@ -14,12 +15,18 @@ import (
 )
 
 func main() {
-	db, err := sql.Open("postgres", "user=bjustice dbname=grpc_todo sslmode=disable")
+	config.LoadConfig("values_local.yaml")
+
+	db, err := sql.Open("postgres",
+		fmt.Sprintf("user=%v dbname=%v sslmode=%v",
+			config.AppConfig.Database.User,
+			config.AppConfig.Database.DBName,
+			config.AppConfig.Database.SSLMode))
 	if err != nil {
 		log.Fatalf("Ошибка подключения к БД: %v", err)
 	}
 
-	listener, err := net.Listen("tcp", ":50051")
+	listener, err := net.Listen(config.AppConfig.Server.Protocol, config.AppConfig.Server.Port)
 	if err != nil {
 		log.Fatalf("Ошибка прослушивания порта: %v", err)
 	}
