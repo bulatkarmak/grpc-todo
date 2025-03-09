@@ -56,7 +56,7 @@ func (r *toDoRepository) GetTask(ctx context.Context, taskID int64) (*domain.Tas
 func (r *toDoRepository) ListTasks(ctx context.Context) ([]domain.Task, error) {
 	var tasks []domain.Task
 
-	rows, err := r.db.QueryContext(ctx, `SELECT * FROM tasks`)
+	rows, err := r.db.QueryContext(ctx, `SELECT * FROM tasks ORDER BY id ASC`)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, fmt.Errorf("в таблице нет задач")
@@ -86,24 +86,24 @@ func (r *toDoRepository) UpdateTask(ctx context.Context, params *domain.UpdateTa
 	i := 1
 
 	if params.Title != nil {
-		query += fmt.Sprintf(" title=$%d,", i)
+		query += fmt.Sprintf(" title = $%d,", i)
 		args = append(args, *params.Title)
 		i++
 	}
 
 	if params.Description != nil {
-		query += fmt.Sprintf(" description=$%d,", i)
+		query += fmt.Sprintf(" description = $%d,", i)
 		args = append(args, *params.Description)
 		i++
 	}
 
 	if params.IsCompleted != nil {
-		query += fmt.Sprintf(" is_completed=$%d,", i)
+		query += fmt.Sprintf(" is_completed = $%d,", i)
 		args = append(args, *params.IsCompleted)
 		i++
 	}
 
-	query += fmt.Sprintf(" updated_at = NOW() WHERE id=$%d RETURNING id, title, description, is_completed, created_at, updated_at", i)
+	query += fmt.Sprintf(" updated_at = NOW() WHERE id = $%d RETURNING id, title, description, is_completed, created_at, updated_at", i)
 	args = append(args, params.ID)
 
 	row := r.db.QueryRowContext(ctx, query, args...)
@@ -118,4 +118,15 @@ func (r *toDoRepository) UpdateTask(ctx context.Context, params *domain.UpdateTa
 	}
 
 	return task, nil
+}
+
+func (r *toDoRepository) DeleteTask(ctx context.Context, taskID int64) error {
+	_, err := r.db.ExecContext(ctx,
+		`DELETE FROM tasks WHERE id = $1`, taskID)
+
+	if err != nil {
+		return err
+	}
+
+	return nil
 }

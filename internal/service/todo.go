@@ -7,9 +7,9 @@ import (
 )
 
 var (
-	EmptyTitleErr      = errors.New("title не может быть пустым")
-	EmptyDescErr       = errors.New("description не может быть пустым")
-	EmptyTaskUpdateErr = errors.New("нечего обновлять — все поля, кроме id, пустые")
+	EmptyTitleErr = errors.New("title не может быть пустым")
+	EmptyDescErr  = errors.New("description не может быть пустым")
+	LessOneIDErr  = errors.New("id должен быть равен 1 или больше")
 )
 
 type ToDoRepository interface {
@@ -17,6 +17,7 @@ type ToDoRepository interface {
 	GetTask(ctx context.Context, taskID int64) (*domain.Task, error)
 	ListTasks(ctx context.Context) ([]domain.Task, error)
 	UpdateTask(ctx context.Context, params *domain.UpdateTaskParams) (*domain.Task, error)
+	DeleteTask(ctx context.Context, taskID int64) error
 }
 
 type ToDoService interface {
@@ -56,6 +57,10 @@ func (s *toDoService) CreateTask(ctx context.Context, params *domain.CreateTaskP
 }
 
 func (s *toDoService) GetTask(ctx context.Context, taskID int64) (*domain.Task, error) {
+	if taskID < 1 {
+		return nil, LessOneIDErr
+	}
+
 	task, err := s.repo.GetTask(ctx, taskID)
 
 	if err != nil {
@@ -97,5 +102,15 @@ func (s *toDoService) UpdateTask(ctx context.Context, params *domain.UpdateTaskP
 }
 
 func (s *toDoService) DeleteTask(ctx context.Context, taskID int64) error {
+	if taskID < 1 {
+		return LessOneIDErr
+	}
+
+	err := s.repo.DeleteTask(ctx, taskID)
+
+	if err != nil {
+		return err
+	}
+
 	return nil
 }

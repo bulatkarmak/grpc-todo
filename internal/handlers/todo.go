@@ -57,14 +57,14 @@ func (h *ToDoHandler) CreateTask(ctx context.Context, req *pb.CreateTaskRequest)
 }
 
 func (h *ToDoHandler) GetTask(ctx context.Context, req *pb.GetTaskRequest) (*pb.GetTaskResponse, error) {
-	if req.TaskId == 0 {
-		log.Printf("ошибка: taskID должен быть больше 0")
-		return nil, status.Error(codes.InvalidArgument, "taskID должен быть больше 0")
-	}
-
 	taskID := req.TaskId
 
 	task, err := h.service.GetTask(ctx, taskID)
+
+	if errors.Is(err, service.LessOneIDErr) {
+		log.Printf("ошибка: taskID должен быть больше 0")
+		return nil, status.Error(codes.InvalidArgument, "taskID должен быть больше 0")
+	}
 
 	if err != nil {
 		log.Printf("ошибка получения task: %v", err)
@@ -146,5 +146,24 @@ func (h *ToDoHandler) UpdateTask(ctx context.Context, req *pb.UpdateTaskRequest)
 }
 
 func (h *ToDoHandler) DeleteTask(ctx context.Context, req *pb.DeleteTaskRequest) (*pb.DeleteTaskResponse, error) {
-	return nil, nil
+	if req.TaskId == 0 {
+		log.Printf("ошибка: taskID должен быть больше 0")
+		return nil, status.Error(codes.InvalidArgument, "taskID должен быть больше 0")
+	}
+
+	taskID := req.TaskId
+
+	err := h.service.DeleteTask(ctx, taskID)
+
+	if errors.Is(err, service.LessOneIDErr) {
+		log.Printf("ошибка: taskID должен быть больше 0")
+		return nil, status.Error(codes.InvalidArgument, "taskID должен быть больше 0")
+	}
+
+	if err != nil {
+		log.Printf("ошибка при удалении task: %v", err)
+		return nil, status.Errorf(codes.Internal, "ошибка при удалении task: %v", err)
+	}
+
+	return &pb.DeleteTaskResponse{}, status.Errorf(codes.OK, "task с ID = %d удалена", taskID)
 }
