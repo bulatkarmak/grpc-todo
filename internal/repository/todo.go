@@ -52,3 +52,30 @@ func (r *toDoRepository) GetTask(ctx context.Context, taskID int64) (*domain.Tas
 
 	return task, nil
 }
+
+func (r *toDoRepository) ListTasks(ctx context.Context) ([]domain.Task, error) {
+	var tasks []domain.Task
+
+	rows, err := r.db.QueryContext(ctx, `SELECT * FROM tasks`)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, fmt.Errorf("в таблице нет задач")
+		}
+		return nil, fmt.Errorf("не получилось получить строки из таблицы: %w", err)
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var task domain.Task
+		if err = rows.Scan(&task.ID, &task.Title, &task.Description, &task.IsCompleted, &task.CreatedAt, &task.UpdatedAt); err != nil {
+			return nil, fmt.Errorf("не получилось отсканировать строку: %w", err)
+		}
+		tasks = append(tasks, task)
+	}
+
+	if rows.Err() != nil {
+		return nil, fmt.Errorf("не получилось итерироваться по строкам: %w", err)
+	}
+
+	return tasks, nil
+}

@@ -82,8 +82,29 @@ func (h *ToDoHandler) GetTask(ctx context.Context, req *pb.GetTaskRequest) (*pb.
 	}, nil
 }
 
-func (h *ToDoHandler) ListTasks(ctx context.Context, req *pb.ListTasksRequest) (*pb.ListTasksResponse, error) {
-	return nil, nil
+func (h *ToDoHandler) ListTasks(ctx context.Context, _ *pb.ListTasksRequest) (*pb.ListTasksResponse, error) {
+	tasks, err := h.service.ListTasks(ctx)
+
+	if err != nil {
+		log.Printf("ошибка получения tasks: %v", err)
+		return nil, status.Errorf(codes.Internal, "ошибка получения tasks: %v", err)
+	}
+
+	var pbTasks []*pb.Task
+	for _, task := range tasks {
+		pbTasks = append(pbTasks, &pb.Task{
+			TaskId:      task.ID,
+			Title:       task.Title,
+			Description: task.Description,
+			IsCompleted: task.IsCompleted,
+			CreatedAt:   timestamppb.New(task.CreatedAt),
+			UpdatedAt:   timestamppb.New(task.UpdatedAt),
+		})
+	}
+
+	return &pb.ListTasksResponse{
+		Tasks: pbTasks,
+	}, nil
 }
 
 func (h *ToDoHandler) UpdateTask(ctx context.Context, req *pb.UpdateTaskRequest) (*pb.UpdateTaskResponse, error) {
